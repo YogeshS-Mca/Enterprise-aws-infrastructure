@@ -23,3 +23,17 @@ resource "aws_subnet" "public" {
     Project     = "Enterprise AWS Infrastructure"
   }
 }
+
+###AWS INTERNET GATEWAY
+
+resource "aws_internet_gateway" "main" {
+
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name        = "enterprise-igw"
+    Environment = "Learning"
+    Project     = "Enterprise AWS Infrastructure"
+    Owner       = "Yogesh"
+  }
+}

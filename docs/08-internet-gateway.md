@@ -36,3 +36,31 @@ The Internet Gateway acts as the entry and exit point for Internet traffic.
 
 - Understood the purpose of an Internet Gateway.
 - Learned why a VPC requires an IGW for Internet connectivity.
+
+## Terraform Implementation
+
+Created an Internet Gateway using Terraform.
+
+Resource:
+
+aws_internet_gateway
+
+Purpose:
+
+Provides communication between the VPC and the public internet.
+
+## Validation
+
+Commands executed:
+
+terraform fmt
+
+terraform validate
+
+terraform plan
+
+terraform apply
+
+## Result
+
+Internet Gateway successfully created and attached to Enterprise VPC.
