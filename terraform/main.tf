@@ -85,3 +85,66 @@ resource "aws_internet_gateway" "main" {
     Owner       = "Yogesh"
   }
 }
+
+####
+
+resource "aws_security_group" "web_sg" {
+
+  name        = "enterprise-web-sg"
+  description = "Security Group for Web Server"
+  vpc_id      = aws_vpc.main.id
+
+  # SSH Access (Only from your public IP)
+  ingress {
+    description = "SSH Access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+
+    cidr_blocks = [
+      "152.57.25.225/32"
+    ]
+  }
+
+  # HTTP Access (Allow everyone)
+  ingress {
+    description = "HTTP Access"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  # HTTPS Access (Allow everyone)
+  ingress {
+    description = "HTTPS Access"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  # Outbound Traffic
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  tags = {
+    Name        = "enterprise-web-sg"
+    Environment = "Learning"
+    Project     = "Enterprise AWS Infrastructure"
+    Owner       = "Yogesh"
+  }
+}
