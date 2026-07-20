@@ -30,3 +30,7 @@ override.tf.json
 # Windows files
 Thumbs.db
 desktop.ini
+
+# SSH Private Keys
+keys/
+*.pem
