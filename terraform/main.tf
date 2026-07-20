@@ -1,10 +1,7 @@
-##EC2
-
+# Latest Amazon Linux 2023 AMI
 data "aws_ami" "amazon_linux" {
-
   most_recent = true
-
-  owners = ["amazon"]
+  owners      = ["amazon"]
 
   filter {
     name   = "name"
@@ -17,7 +14,7 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-
+# VPC
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
@@ -31,6 +28,7 @@ resource "aws_vpc" "main" {
   }
 }
 
+# Public Subnet
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
@@ -41,18 +39,28 @@ resource "aws_subnet" "public" {
     Name        = "public-subnet"
     Environment = "Learning"
     Project     = "Enterprise AWS Infrastructure"
+    Owner       = "Yogesh"
   }
 }
 
-####Route table
+# Internet Gateway
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
 
+  tags = {
+    Name        = "enterprise-igw"
+    Environment = "Learning"
+    Project     = "Enterprise AWS Infrastructure"
+    Owner       = "Yogesh"
+  }
+}
+
+# Public Route Table
 resource "aws_route_table" "public" {
-
   vpc_id = aws_vpc.main.id
 
   route {
     cidr_block = "0.0.0.0/0"
-
     gateway_id = aws_internet_gateway.main.id
   }
 
@@ -64,81 +72,51 @@ resource "aws_route_table" "public" {
   }
 }
 
+# Route Table Association
 resource "aws_route_table_association" "public" {
-
-  subnet_id = aws_subnet.public.id
-
+  subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id
-
 }
 
-###AWS INTERNET GATEWAY
-
-resource "aws_internet_gateway" "main" {
-
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name        = "enterprise-igw"
-    Environment = "Learning"
-    Project     = "Enterprise AWS Infrastructure"
-    Owner       = "Yogesh"
-  }
-}
-
-####
-
+# Security Group
 resource "aws_security_group" "web_sg" {
-
   name        = "enterprise-web-sg"
   description = "Security Group for Web Server"
   vpc_id      = aws_vpc.main.id
 
-  # SSH Access (Only from your public IP)
+  # SSH access only from your current public IP
   ingress {
     description = "SSH Access"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-
-    cidr_blocks = [
-      "152.57.25.225/32"
-    ]
+    cidr_blocks = ["152.57.18.216/32"]
   }
 
-  # HTTP Access (Allow everyone)
+  # HTTP access from anywhere
   ingress {
     description = "HTTP Access"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # HTTPS Access (Allow everyone)
+  # HTTPS access from anywhere
   ingress {
     description = "HTTPS Access"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Outbound Traffic
+  # Allow all outbound traffic
   egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -149,21 +127,20 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-####EC2 INSTANCE
-
+# EC2 Instance
 resource "aws_instance" "web" {
-
-  ami           = data.aws_ami.amazon_linux.id
-  instance_type = "t3.micro"
-  key_name      = "enterprise-key"
-
-  subnet_id = aws_subnet.public.id
-
-  vpc_security_group_ids = [
-    aws_security_group.web_sg.id
-  ]
-
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = "t3.micro"
+  key_name                    = "enterprise-key"
+  subnet_id                   = aws_subnet.public.id
+  vpc_security_group_ids      = [aws_security_group.web_sg.id]
   associate_public_ip_address = true
+
+  # Run the NGINX installation script during first boot.
+  user_data = file("${path.module}/../scripts/install-nginx.sh")
+
+  # Replace the instance when the startup script changes.
+  user_data_replace_on_change = true
 
   tags = {
     Name        = "enterprise-web-server"
