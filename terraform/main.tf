@@ -84,13 +84,13 @@ resource "aws_security_group" "web_sg" {
   description = "Security Group for Web Server"
   vpc_id      = aws_vpc.main.id
 
-  # SSH access only from your current public IP
+  # SSH access only from the IP supplied through terraform.tfvars
   ingress {
     description = "SSH Access"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["152.57.18.216/32"]
+    cidr_blocks = [var.allowed_ssh_cidr]
   }
 
   # HTTP access from anywhere
@@ -131,15 +131,19 @@ resource "aws_security_group" "web_sg" {
 resource "aws_instance" "web" {
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = "t3.micro"
-  key_name                    = "enterprise-key"
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
+  key_name                    = "enterprise-key"
   associate_public_ip_address = true
 
-  # Run the NGINX installation script during first boot.
-  user_data = file("${path.module}/../scripts/install-nginx.sh")
+  # Normalize Windows CRLF line endings to Linux LF
+  user_data = replace(
+    file("${path.module}/../scripts/install-nginx.sh"),
+    "\r\n",
+    "\n"
+  )
 
-  # Replace the instance when the startup script changes.
+  # Replace the EC2 instance when the user-data script changes
   user_data_replace_on_change = true
 
   tags = {
