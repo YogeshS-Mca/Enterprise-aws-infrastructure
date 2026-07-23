@@ -1,25 +1,45 @@
-# Terraform working directory
+# Terraform working directories
 .terraform/
+**/.terraform/
 
 # Terraform state files
 *.tfstate
 *.tfstate.*
+*.tfstate.backup
+*.tfstate.pre-s3-backup
 
-# Variable files (may contain secrets)
+# Local Terraform variable files
 terraform.tfvars
+**/terraform.tfvars
 *.auto.tfvars
+*.auto.tfvars.json
+
+# Terraform plan files
+*.tfplan
+tfplan
 
 # Terraform crash logs
 crash.log
+crash.*.log
 
-# Override files
+# Terraform override files
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Terraform lock file (keep if working in a team)
-# .terraform.lock.hcl
+# Keep the Terraform provider lock file
+# Do not ignore .terraform.lock.hcl
+
+# SSH private keys
+keys/
+*.pem
+*.key
+*.ppk
+
+# AWS credential files
+.aws/
+credentials
 
 # VS Code settings
 .vscode/
@@ -31,6 +51,8 @@ override.tf.json
 Thumbs.db
 desktop.ini
 
-# SSH Private Keys
-keys/
-*.pem
+# Temporary and backup files
+*.tmp
+*.bak
+*~
+README-backup.md

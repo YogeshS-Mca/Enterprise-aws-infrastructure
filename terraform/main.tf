@@ -1,4 +1,7 @@
+#######################################################
 # Latest Amazon Linux 2023 AMI
+#######################################################
+
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -14,48 +17,60 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+#######################################################
 # VPC
+#######################################################
+
 resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = {
-    Name        = "enterprise-vpc"
-    Environment = "Learning"
-    Project     = "Enterprise AWS Infrastructure"
-    Owner       = "Yogesh"
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "enterprise-vpc"
+    }
+  )
 }
 
+#######################################################
 # Public Subnet
+#######################################################
+
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "ap-south-1a"
+  cidr_block              = var.public_subnet_cidr
+  availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
 
-  tags = {
-    Name        = "public-subnet"
-    Environment = "Learning"
-    Project     = "Enterprise AWS Infrastructure"
-    Owner       = "Yogesh"
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "public-subnet"
+    }
+  )
 }
 
+#######################################################
 # Internet Gateway
+#######################################################
+
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name        = "enterprise-igw"
-    Environment = "Learning"
-    Project     = "Enterprise AWS Infrastructure"
-    Owner       = "Yogesh"
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "enterprise-igw"
+    }
+  )
 }
 
+#######################################################
 # Public Route Table
+#######################################################
+
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -64,21 +79,27 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = {
-    Name        = "public-route-table"
-    Environment = "Learning"
-    Project     = "Enterprise AWS Infrastructure"
-    Owner       = "Yogesh"
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "public-route-table"
+    }
+  )
 }
 
+#######################################################
 # Route Table Association
+#######################################################
+
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id
 }
 
+#######################################################
 # Security Group
+#######################################################
+
 resource "aws_security_group" "web_sg" {
   name        = "enterprise-web-sg"
   description = "Security Group for Web Server"
@@ -119,21 +140,24 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name        = "enterprise-web-sg"
-    Environment = "Learning"
-    Project     = "Enterprise AWS Infrastructure"
-    Owner       = "Yogesh"
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "enterprise-web-sg"
+    }
+  )
 }
 
+#######################################################
 # EC2 Instance
+#######################################################
+
 resource "aws_instance" "web" {
   ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = "t3.micro"
+  instance_type               = var.instance_type
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
-  key_name                    = "enterprise-key"
+  key_name                    = var.key_name
   associate_public_ip_address = true
 
   # Normalize Windows CRLF line endings to Linux LF
@@ -146,10 +170,10 @@ resource "aws_instance" "web" {
   # Replace the EC2 instance when the user-data script changes
   user_data_replace_on_change = true
 
-  tags = {
-    Name        = "enterprise-web-server"
-    Environment = "Learning"
-    Project     = "Enterprise AWS Infrastructure"
-    Owner       = "Yogesh"
-  }
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "enterprise-web-server"
+    }
+  )
 }
